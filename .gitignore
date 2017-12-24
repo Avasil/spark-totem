@@ -1,2 +1,12 @@
-*.class
+# IntelliJ project files
+target
+logs/*
+.directory
+.project
+.classpath
+.cache
+*.sql
 *.log
+.pid
+*~
+.idea
