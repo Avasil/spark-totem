@@ -4,7 +4,6 @@ import cats.effect.IO
 import cats.~>
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.dianahep.sparkroot._
-import pgawrys.totem.BenchmarkType.{Filter, HeavyComputation, Lorentz}
 import pgawrys.totem.algebra.{InitializeSpark, LoadDataFrame, RunBenchmark, SparkAlg}
 import pgawrys.totem.{Result, Settings}
 
@@ -18,7 +17,6 @@ object SparkInterpreter extends (SparkAlg ~> IO) {
   private def initializeSpark(): IO[SparkSession] = IO {
     val spark: SparkSession = SparkSession.builder()
       .appName(this.getClass.getSimpleName)
-      .master("local[*]")
       .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
     spark
@@ -39,19 +37,8 @@ object SparkInterpreter extends (SparkAlg ~> IO) {
 
   private def runBenchmark(df: DataFrame, settings: Settings)(implicit spark: SparkSession): IO[Result] = IO {
     import settings._
-    import spark.implicits._
-    val Dx_rp_3_m = -9.656e-02
+    val dataframes = List.fill(iterations)(benchmarkType.run(df))
 
-    val dataframes: List[DataFrame] = List.fill(iterations) {
-      benchmarkType match {
-        case Filter =>
-          df
-            .filter($"track_rp_3_.valid" === true)
-            .select($"track_rp_3_.x" / 1000.0 / Dx_rp_3_m as "xi_rp_3")
-        case HeavyComputation => df
-        case Lorentz => df
-      }
-    }
     val results = dataframes.map { dataframe =>
       if (persist)
         dataframe.persist()

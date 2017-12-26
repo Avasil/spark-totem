@@ -14,18 +14,18 @@ object Main {
 
     type SparkBenchmark[A] = EitherK[BenchmarkAlg, SparkAlg, A]
 
-    def program(implicit
+    def program(args: Array[String])(implicit
                 benchmarkOps: BenchmarkOps[SparkBenchmark],
                 sparkOps: SparkOps[SparkBenchmark]): Free[SparkBenchmark, Unit] = {
       import benchmarkOps._
       import sparkOps._
 
       for {
+        settings <- loadSettings(args)
         sparkSession <- initializeSpark()
         _ <- {
           implicit val spark = sparkSession
           for {
-            settings <- loadSettings()
             df <- loadDataFrame(settings.path, settings.parquet, settings.limit)
             result <- runBenchmark(df, settings)
             _ <- displayResults(result)
@@ -35,7 +35,7 @@ object Main {
     }
 
     val interpreter: SparkBenchmark ~> IO = BenchmarkConsoleInterpreter or SparkInterpreter
-    val ioProgram: IO[Unit] = program foldMap interpreter
+    val ioProgram: IO[Unit] = program(args) foldMap interpreter
 
     ioProgram.unsafeRunSync()
   }
