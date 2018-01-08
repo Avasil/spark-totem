@@ -19,21 +19,15 @@ object BenchmarkConsoleInterpreter extends (BenchmarkAlg ~> IO) {
 
     def getBenchmarkType(config: Config) = Try(config.getInt("type")) map BenchmarkType.apply getOrElse Filter
 
-    def getPath(config: Config) = config.getString("path")
-
     val config = ConfigFactory.load().getConfig("benchmark")
 
-    val (path, benchmarkType) = args.toList match {
-      case benchType :: filePath :: _ =>
-        (filePath, Try(BenchmarkType(benchType.toInt)) getOrElse getBenchmarkType(config))
-      case benchType :: _ => (getPath(config), Try(BenchmarkType(benchType.toInt)) getOrElse getBenchmarkType(config))
-      case _ => (getPath(config), getBenchmarkType(config))
-    }
+    val benchmarkType = Try(BenchmarkType(args(0).toInt)) getOrElse getBenchmarkType(config)
+    val path = Try(args(1)) getOrElse config.getString("path")
+    val iterations = Try(args(2).toInt) getOrElse Try(config.getInt("iterations")).getOrElse(5)
 
-    val parquet: Boolean = Try(config.getBoolean("parquet")).getOrElse(false)
-    val persist: Boolean = Try(config.getBoolean("persist")).getOrElse(false)
-    val iterations: Int = Try(config.getInt("iterations")).getOrElse(5)
-    val limit: Option[Int] = Try(config.getInt("limit")).toOption
+    val parquet: Boolean = Try(args(3).toInt) map(_ == 1) getOrElse Try(config.getBoolean("parquet")).getOrElse(false)
+    val persist: Boolean = Try(args(4).toInt) map(_ == 1) getOrElse Try(config.getBoolean("persist")).getOrElse(false)
+    val limit: Option[Int] = (Try(args(5).toInt) orElse Try(config.getInt("limit"))).toOption
 
     val settings = Settings(path, iterations, parquet, persist, benchmarkType, limit)
     println(settings.prettyString)

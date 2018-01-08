@@ -31,7 +31,6 @@ val other = Seq(
 )
 
 libraryDependencies ++= catsDependencies ++ sparkDependencies ++ other
-fork in run := true
 
 assemblyJarName in assembly := "spark-totem.jar"
 mainClass in assembly := Some("pgawrys.totem.Main")

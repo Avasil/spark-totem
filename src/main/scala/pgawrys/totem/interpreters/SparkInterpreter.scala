@@ -37,18 +37,24 @@ object SparkInterpreter extends (SparkAlg ~> IO) {
 
   private def runBenchmark(df: DataFrame, settings: Settings)(implicit spark: SparkSession): IO[Result] = IO {
     import settings._
-    val dataframes = List.fill(iterations)(benchmarkType.run(df))
 
-    val results = dataframes.map { dataframe =>
-      if (persist)
-        dataframe.persist()
-
-      timed {
-        println(s"Rows left: ${dataframe.count()}")
-      }
+    (0 to 1) foreach { _ =>
+      println (timed (println(s"(Warmup) Rows left: ${benchmarkType.run(df).count()}")))
     }
 
-    Result(results)
+    val results =
+      for (_ <- 0 until iterations)
+        yield {
+          if (persist)
+            df.persist()
+          val res = timed {
+            println(s"Rows left: ${benchmarkType.run(df).count()}")
+          }
+          println(res)
+          res
+        }
+
+    Result(results.drop(2).toList)
   }
 
   private def timed[A](computation: => A): Double = {

@@ -1,6 +1,6 @@
 package pgawrys.totem
 
-final case class Result(res: Seq[Double]) {
+final case class Result(res: List[Double]) {
 
   def prettyPrint(): String = {
     val min = res min
@@ -11,7 +11,11 @@ final case class Result(res: Seq[Double]) {
       .sum / res.length
 
     val stddev = math.sqrt(variance)
+    val median = {
+      val (lower, upper) = res.sortWith(_<_).splitAt(res.size / 2)
+      if (res.size % 2 == 0) (lower.last + upper.head) / 2.0 else upper.head
+    }
 
-    s"min: $min | max: $max | avg: $avg | variance: $variance | stddev: $stddev"
+    s"min: $min | max: $max | avg: $avg | median: $median | variance: $variance | stddev: $stddev [s]"
   }
 }
